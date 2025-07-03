@@ -1,33 +1,14 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { AuthProvider } from '@/lib/AuthContext';
+import * as SplashScreen from 'expo-splash-screen';
 
-function AuthGate({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-
-  const inAuthGroup = segments[0] === 'auth';
-
-  useEffect(() => {
-    if (!user && !inAuthGroup) {
-      router.replace('/auth/login');
-    }
-    if (user && inAuthGroup) {
-      router.replace('/');
-    }
-  }, [user, inAuthGroup]);
-
-  if (!user && !inAuthGroup) return null; // render nothing while redirecting
-  return <>{children}</>;
-}
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AuthGate>
-        <Stack screenOptions={{ headerShown: false }} />
-      </AuthGate>
+      <Stack screenOptions={{ headerShown: false }} />
     </AuthProvider>
   );
 }

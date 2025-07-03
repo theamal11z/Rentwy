@@ -1,32 +1,53 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   Dimensions,
+  StatusBar,
+  Animated,
+  TextInput,
+  ImageBackground,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-// import { useQuery } from 'convex/react';
+import { useRouter } from 'expo-router';
 import { useFeaturedItems } from '@/lib/mockHooks';
+import { theme, getColor, getShadow } from '@/lib/theme';
+import { BlurView } from 'expo-blur';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  const router = useRouter();
   const featuredItems = useFeaturedItems();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [currentUser] = useState({ name: 'Sarah', profileComplete: false });
 
   const categories = [
-    { id: 'dress', name: 'Dresses', icon: 'shirt-outline' },
-    { id: 'top', name: 'Tops', icon: 'shirt-outline' },
-    { id: 'accessories', name: 'Accessories', icon: 'watch-outline' },
-    { id: 'shoes', name: 'Shoes', icon: 'footsteps-outline' },
-    { id: 'bags', name: 'Bags', icon: 'bag-outline' },
-    { id: 'jewelry', name: 'Jewelry', icon: 'diamond-outline' },
+    { id: 'dress', name: 'Dresses', icon: 'shirt-outline', color: '#E91E63' },
+    { id: 'top', name: 'Tops', icon: 'shirt-outline', color: '#2196F3' },
+    { id: 'accessories', name: 'Accessories', icon: 'watch-outline', color: '#FF9800' },
+    { id: 'shoes', name: 'Shoes', icon: 'footsteps-outline', color: '#9C27B0' },
+    { id: 'bags', name: 'Bags', icon: 'bag-outline', color: '#795548' },
+    { id: 'jewelry', name: 'Jewelry', icon: 'diamond-outline', color: '#FFC107' },
   ];
+
+  const trendingItems = [
+    { id: '1', title: 'Most Rented', subtitle: 'Designer dress', trend: '+45%' },
+    { id: '2', title: 'Rising Star', subtitle: 'Vintage jacket', trend: '+128%' },
+    { id: '3', title: 'Popular', subtitle: 'Evening wear', trend: '+32%' },
+  ];
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.9],
+    extrapolate: 'clamp',
+  });
 
   const renderFeaturedItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.featuredCard}>
@@ -79,10 +100,74 @@ export default function HomeScreen() {
         </View>
 
         {/* Search Bar */}
-        <TouchableOpacity style={styles.searchBar}>
+        <TouchableOpacity 
+          style={styles.searchBar}
+          onPress={() => router.push('/(tabs)/explore')}
+        >
           <Ionicons name="search-outline" size={20} color="#666666" />
           <Text style={styles.searchPlaceholder}>Search for clothes, accessories...</Text>
+          <View style={styles.searchFilter}>
+            <Ionicons name="options-outline" size={18} color="#4CAF50" />
+          </View>
         </TouchableOpacity>
+
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroContent}>
+              <View style={styles.heroText}>
+                <Text style={styles.heroTitle}>Share Your Style,{"\n"}Earn Money</Text>
+                <Text style={styles.heroSubtitle}>
+                  List your unused clothes and start earning from your wardrobe today
+                </Text>
+                <TouchableOpacity 
+                  style={styles.heroButton}
+                  onPress={() => router.push('/(tabs)/add-listing')}
+                >
+                  <Text style={styles.heroButtonText}>Start Listing</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.heroIllustration}>
+                <View style={styles.illustrationCircle}>
+                  <Ionicons name="shirt" size={32} color="#4CAF50" />
+                </View>
+                <View style={styles.illustrationAccent}>
+                  <Text style={styles.accentText}>💰</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Trending Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Trending Now</Text>
+            <View style={styles.trendingBadge}>
+              <Text style={styles.trendingText}>🔥 Hot</Text>
+            </View>
+          </View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.trendingList}
+          >
+            {trendingItems.map((trend) => (
+              <View key={trend.id} style={styles.trendingCard}>
+                <View style={styles.trendingIcon}>
+                  <Ionicons name="trending-up" size={20} color="#4CAF50" />
+                </View>
+                <Text style={styles.trendingTitle}>{trend.title}</Text>
+                <Text style={styles.trendingSubtitle}>{trend.subtitle}</Text>
+                <View style={styles.trendingStats}>
+                  <Text style={styles.trendingPercent}>{trend.trend}</Text>
+                  <Ionicons name="arrow-up" size={12} color="#4CAF50" />
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
         {/* Categories */}
         <View style={styles.section}>
@@ -381,5 +466,155 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
     textAlign: 'center',
+  },
+  searchFilter: {
+    marginLeft: 'auto',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroSection: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  heroCard: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  heroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 24,
+  },
+  heroText: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    lineHeight: 28,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  heroButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  heroButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginRight: 6,
+  },
+  heroIllustration: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  illustrationCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  illustrationAccent: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  accentText: {
+    fontSize: 18,
+  },
+  trendingBadge: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  trendingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  trendingList: {
+    paddingTop: 16,
+  },
+  trendingCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 12,
+    width: 120,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  trendingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  trendingTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  trendingSubtitle: {
+    fontSize: 12,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  trendingStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  trendingPercent: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4CAF50',
+    marginRight: 2,
   },
 });

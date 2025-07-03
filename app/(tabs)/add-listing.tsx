@@ -8,14 +8,20 @@ import {
   TextInput,
   Alert,
   Platform,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { useRouter } from 'expo-router';
+import { theme, getColor, getShadow } from '@/lib/theme';
+
+const { width } = Dimensions.get('window');
 
 export default function AddListingScreen() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -26,8 +32,6 @@ export default function AddListingScreen() {
     depositAmount: '',
     tags: '',
   });
-
-  const createItem = useMutation(api.items.createItem);
 
   const categories = [
     { id: 'dress', name: 'Dress', icon: 'shirt-outline' },
@@ -105,52 +109,75 @@ export default function AddListingScreen() {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
 
-      // For now, we'll use a dummy user ID and location
-      // In a real app, this would come from authentication
-      const dummyUserId = "dummy_user_id" as any;
-      const dummyLocation = {
-        latitude: 37.7749,
-        longitude: -122.4194,
-        address: "San Francisco, CA"
-      };
+      // Mock API call - simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      await createItem({
-        ownerId: dummyUserId,
+      // Create mock item data
+      const newItem = {
+        _id: `item_${Date.now()}`,
+        ownerId: 'current_user_id',
         title: formData.title.trim(),
         description: formData.description.trim(),
-        category: formData.category as any,
+        category: formData.category,
         size: formData.size,
-        condition: formData.condition as any,
+        condition: formData.condition,
         images: [], // Will be implemented with image upload
         pricePerDay: Number(formData.pricePerDay),
         depositAmount: Number(formData.depositAmount),
-        location: dummyLocation,
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+          address: "San Francisco, CA"
+        },
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
-      });
+        rating: 0,
+        totalReviews: 0,
+        createdAt: new Date().toISOString(),
+        status: 'active'
+      };
 
-      Alert.alert('Success', 'Your item has been listed!', [
-        { text: 'OK', onPress: () => {
-          // Reset form
-          setFormData({
-            title: '',
-            description: '',
-            category: '',
-            size: '',
-            condition: '',
-            pricePerDay: '',
-            depositAmount: '',
-            tags: '',
-          });
-        }}
-      ]);
+      console.log('Mock item created:', newItem);
+
+      Alert.alert(
+        'Success! 🎉', 
+        'Your item has been listed successfully! It will be visible to other users shortly.',
+        [
+          {
+            text: 'View My Listings',
+            onPress: () => {
+              router.push('/profile/listings');
+            }
+          },
+          {
+            text: 'Add Another Item',
+            onPress: () => {
+              // Reset form
+              setFormData({
+                title: '',
+                description: '',
+                category: '',
+                size: '',
+                condition: '',
+                pricePerDay: '',
+                depositAmount: '',
+                tags: '',
+              });
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Error creating item:', error);
       Alert.alert('Error', 'Failed to create listing. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -355,8 +382,19 @@ export default function AddListingScreen() {
 
         {/* Submit Button */}
         <View style={styles.submitContainer}>
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>List Item</Text>
+          <TouchableOpacity 
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]} 
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <View style={styles.submitButtonContent}>
+                <Text style={styles.submitButtonText}>Creating Listing...</Text>
+                <View style={styles.loadingDot} />
+              </View>
+            ) : (
+              <Text style={styles.submitButtonText}>List Item</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -583,5 +621,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.7,
+  },
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+    marginLeft: 8,
+    opacity: 0.8,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,21 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  StatusBar,
+  Platform,
+  Image,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { theme, getColor, getShadow } from '@/lib/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  // Mock user data
+  const [scrollY] = useState(new Animated.Value(0));
+  
+  // Mock user data with enhanced profile info
   const user = {
     name: 'Alex Johnson',
     email: 'alex.johnson@email.com',
@@ -23,58 +30,81 @@ export default function ProfileScreen() {
     totalReviews: 24,
     totalListings: 12,
     totalRentals: 18,
+    totalEarnings: 2450,
+    totalFavorites: 8,
+    completionRate: 98,
+    responseRate: 95,
     isVerified: true,
+    profileImage: null, // Will use placeholder
+    bio: '👕 Fashion enthusiast sharing my wardrobe! Love sustainable fashion and helping others look their best.',
   };
+
+  const quickActions = [
+    {
+      id: 'rentals',
+      title: 'My Rentals',
+      subtitle: `${user.totalRentals} rentals`,
+      icon: 'bag-outline',
+      color: getColor('info.500'),
+      bgColor: getColor('info.50'),
+    },
+    {
+      id: 'favorites',
+      title: 'Favorites',
+      subtitle: `${user.totalFavorites} saved`,
+      icon: 'heart-outline',
+      color: '#FF6B6B',
+      bgColor: '#FFF0F0',
+    },
+    {
+      id: 'reviews',
+      title: 'Reviews',
+      subtitle: `${user.totalReviews} reviews`,
+      icon: 'star-outline',
+      color: '#FFD93D',
+      bgColor: '#FFF9E6',
+    },
+    {
+      id: 'help',
+      title: 'Help & Support',
+      subtitle: 'Get assistance',
+      icon: 'help-circle-outline',
+      color: getColor('neutral.600'),
+      bgColor: getColor('neutral.100'),
+    },
+  ];
+
+  const profileStats = [
+    { label: 'Rating', value: user.rating.toString(), icon: 'star', color: '#FFD93D' },
+    { label: 'Reviews', value: user.totalReviews.toString(), icon: 'chatbubble-outline', color: getColor('info.500') },
+    { label: 'Response Rate', value: `${user.responseRate}%`, icon: 'time-outline', color: getColor('success.500') },
+    { label: 'Completion', value: `${user.completionRate}%`, icon: 'checkmark-circle-outline', color: getColor('success.500') },
+  ];
 
   const menuItems = [
     {
       id: 'listings',
       title: 'My Listings',
-      subtitle: `${user.totalListings} active items`,
+      subtitle: `Manage your ${user.totalListings} items`,
       icon: 'shirt-outline',
-      color: '#4CAF50',
-    },
-    {
-      id: 'rentals',
-      title: 'My Rentals',
-      subtitle: `${user.totalRentals} completed rentals`,
-      icon: 'bag-outline',
-      color: '#2196F3',
-    },
-    {
-      id: 'favorites',
-      title: 'Favorites',
-      subtitle: 'Saved items',
-      icon: 'heart-outline',
-      color: '#FF4444',
-    },
-    {
-      id: 'reviews',
-      title: 'Reviews',
-      subtitle: `${user.totalReviews} reviews received`,
-      icon: 'star-outline',
-      color: '#FFD700',
+      color: getColor('primary.500'),
+      hasNotification: false,
     },
     {
       id: 'earnings',
       title: 'Earnings',
-      subtitle: 'View your earnings',
+      subtitle: `$${user.totalEarnings.toLocaleString()} total earned`,
       icon: 'wallet-outline',
-      color: '#4CAF50',
+      color: getColor('success.500'),
+      hasNotification: true,
     },
     {
       id: 'settings',
-      title: 'Settings',
-      subtitle: 'Account & preferences',
+      title: 'Account Settings',
+      subtitle: 'Privacy, notifications, and more',
       icon: 'settings-outline',
-      color: '#666666',
-    },
-    {
-      id: 'help',
-      title: 'Help & Support',
-      subtitle: 'Get help or contact us',
-      icon: 'help-circle-outline',
-      color: '#666666',
+      color: getColor('neutral.600'),
+      hasNotification: false,
     },
   ];
 
@@ -106,6 +136,20 @@ export default function ProfileScreen() {
     }
   };
 
+  const renderQuickAction = (item: any, index: number) => (
+    <TouchableOpacity
+      key={item.id}
+      style={[styles.quickActionCard, { backgroundColor: item.bgColor }]}
+      onPress={() => handleMenuPress(item.id)}
+    >
+      <View style={styles.quickActionIcon}>
+        <Ionicons name={item.icon as any} size={24} color={item.color} />
+      </View>
+      <Text style={styles.quickActionTitle}>{item.title}</Text>
+      <Text style={[styles.quickActionSubtitle, { color: item.color }]}>{item.subtitle}</Text>
+    </TouchableOpacity>
+  );
+
   const renderMenuItem = (item: any) => (
     <TouchableOpacity
       key={item.id}
@@ -114,85 +158,101 @@ export default function ProfileScreen() {
     >
       <View style={[styles.menuIcon, { backgroundColor: `${item.color}15` }]}>
         <Ionicons name={item.icon as any} size={24} color={item.color} />
+        {item.hasNotification && <View style={styles.notificationDot} />}
       </View>
       <View style={styles.menuContent}>
         <Text style={styles.menuTitle}>{item.title}</Text>
         <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCCCCC" />
+      <Ionicons name="chevron-forward" size={18} color={getColor('neutral.400')} />
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="dark-content" backgroundColor={getColor('neutral.50')} />
+      <Animated.ScrollView 
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity style={styles.conversationCard} onPress={() => router.push(`/messages/${item.id}`)}>
-            <Ionicons name="create-outline" size={24} color="#333333" />
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <TouchableOpacity 
+            style={styles.editButton}
+          onPress={() => router.push('/profile/edit')}
+          >
+            <Ionicons name="create-outline" size={20} color={getColor('neutral.700')} />
           </TouchableOpacity>
         </View>
 
-        {/* Profile Card */}
+        {/* Enhanced Profile Card */}
         <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Ionicons name="person-outline" size={40} color="#666666" />
-            </View>
-            {user.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                {user.profileImage ? (
+                  <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person-outline" size={32} color={getColor('neutral.500')} />
+                )}
               </View>
-            )}
-          </View>
-          
-          <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-            <View style={styles.locationContainer}>
-              <Ionicons name="location-outline" size={14} color="#666666" />
-              <Text style={styles.userLocation}>{user.location}</Text>
+              {user.isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark" size={10} color={getColor('neutral.0')} />
+                </View>
+              )}
             </View>
-            <Text style={styles.memberSince}>Member since {user.memberSince}</Text>
-          </View>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.rating}</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-            <View style={styles.starsContainer}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons
-                  key={star}
-                  name={star <= Math.floor(user.rating) ? "star" : "star-outline"}
-                  size={12}
-                  color="#FFD700"
-                />
-              ))}
+            
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <View style={styles.locationContainer}>
+                <Ionicons name="location-outline" size={12} color={getColor('neutral.500')} />
+                <Text style={styles.userLocation}>{user.location}</Text>
+              </View>
+              <Text style={styles.memberSince}>Member since {user.memberSince}</Text>
             </View>
           </View>
           
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.totalReviews}</Text>
-            <Text style={styles.statLabel}>Reviews</Text>
-          </View>
-          
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.totalListings}</Text>
-            <Text style={styles.statLabel}>Listings</Text>
+          {/* Bio */}
+          {user.bio && (
+            <View style={styles.bioContainer}>
+              <Text style={styles.bioText}>{user.bio}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Enhanced Stats Grid */}
+        <View style={styles.statsGrid}>
+          {profileStats.map((stat, index) => (
+            <View key={index} style={styles.statCard}>
+              <View style={[styles.statIconContainer, { backgroundColor: `${stat.color}15` }]}>
+                <Ionicons name={stat.icon as any} size={18} color={stat.color} />
+              </View>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statTitle}>{stat.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            {quickActions.map(renderQuickAction)}
           </View>
         </View>
 
-        {/* Menu Items */}
-        <View style={styles.menuContainer}>
-          {menuItems.map(renderMenuItem)}
+        {/* Main Menu */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Account Management</Text>
+          <View style={styles.menuContainer}>
+            {menuItems.map(renderMenuItem)}
+          </View>
         </View>
 
         {/* Logout Button */}
@@ -201,14 +261,20 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
             onPress={() => Alert.alert('Logout', 'Are you sure you want to logout?', [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Logout', style: 'destructive' }
+              { text: 'Logout', style: 'destructive', onPress: () => {
+                // Add logout logic here
+                console.log('User logged out');
+              }}
             ])}
           >
-            <Ionicons name="log-out-outline" size={20} color="#FF4444" />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Ionicons name="log-out-outline" size={18} color={getColor('error.500')} />
+            <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        {/* Bottom Spacing */}
+        <View style={{ height: 40 }} />
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -216,7 +282,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: getColor('neutral.50'),
   },
   header: {
     flexDirection: 'row',
@@ -224,75 +290,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: getColor('neutral.0'),
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: '700',
+    color: getColor('neutral.900'),
   },
   editButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: getColor('neutral.100'),
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: getColor('neutral.0'),
     marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
+    marginTop: 16,
+    borderRadius: 20,
+    padding: 24,
+    ...getShadow('base'),
+  },
+  profileHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    marginBottom: 16,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginRight: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F5F5F5',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: getColor('neutral.100'),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#4CAF50',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: getColor('success.500'),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: getColor('neutral.0'),
   },
   profileInfo: {
-    alignItems: 'center',
+    flex: 1,
   },
   userName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontSize: 20,
+    fontWeight: '700',
+    color: getColor('neutral.900'),
     marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 8,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -301,66 +364,105 @@ const styles = StyleSheet.create({
   },
   userLocation: {
     fontSize: 14,
-    color: '#666666',
+    color: getColor('neutral.600'),
     marginLeft: 4,
   },
   memberSince: {
-    fontSize: 14,
-    color: '#999999',
+    fontSize: 12,
+    color: getColor('neutral.500'),
   },
-  statsContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
+  bioContainer: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: getColor('neutral.100'),
+  },
+  bioText: {
+    fontSize: 14,
+    color: getColor('neutral.700'),
+    lineHeight: 20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
     marginTop: 16,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: getColor('neutral.0'),
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
+    alignItems: 'center',
+    ...getShadow('sm'),
+  },
+  statIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: getColor('neutral.900'),
+    marginBottom: 2,
+  },
+  statTitle: {
+    fontSize: 12,
+    color: getColor('neutral.600'),
+    textAlign: 'center',
+  },
+  sectionContainer: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: getColor('neutral.900'),
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  quickActionsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  quickActionCard: {
+    width: '48%',
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadow('sm'),
   },
-  statItem: {
-    alignItems: 'center',
+  quickActionIcon: {
+    marginBottom: 8,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  statLabel: {
+  quickActionTitle: {
     fontSize: 14,
-    color: '#666666',
-    marginTop: 4,
+    fontWeight: '600',
+    color: getColor('neutral.900'),
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  starsContainer: {
-    flexDirection: 'row',
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#E0E0E0',
+  quickActionSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   menuContainer: {
-    marginTop: 24,
     paddingHorizontal: 20,
   },
   menuItem: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: getColor('neutral.0'),
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadow('sm'),
   },
   menuIcon: {
     width: 48,
@@ -369,6 +471,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: getColor('error.500'),
   },
   menuContent: {
     flex: 1,
@@ -376,31 +488,33 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
+    color: getColor('neutral.900'),
     marginBottom: 2,
   },
   menuSubtitle: {
     fontSize: 14,
-    color: '#666666',
+    color: getColor('neutral.600'),
   },
   logoutContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
+    marginTop: 12,
   },
   logoutButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: getColor('neutral.0'),
+    borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#FF4444',
+    borderColor: getColor('error.200'),
+    ...getShadow('sm'),
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF4444',
+    color: getColor('error.500'),
     marginLeft: 8,
   },
 });

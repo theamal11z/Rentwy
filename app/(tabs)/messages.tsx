@@ -57,14 +57,21 @@ export default function MessagesScreen() {
     },
   ];
 
+  const handleUserProfilePress = (userId: string, userName: string) => {
+    router.push(`/profile/UserProfileScreen?userId=${userId}&userName=${userName}`);
+  };
+
   const renderConversation = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.conversationCard} onPress={() => router.push(`/messages/${item.id}`)}>
-      <View style={styles.avatarContainer}>
+      <TouchableOpacity 
+        style={styles.avatarContainer}
+        onPress={() => handleUserProfilePress(item.id, item.userName)}
+      >
         <View style={styles.avatar}>
           <Ionicons name="person-outline" size={24} color="#666666" />
         </View>
         {item.isOnline && <View style={styles.onlineIndicator} />}
-      </View>
+      </TouchableOpacity>
       
       <View style={styles.conversationContent}>
         <View style={styles.conversationHeader}>
