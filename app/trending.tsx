@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useItems } from '@/lib/mockHooks';
+import { useTrendingData } from '@/lib/hooks/useSupabase';
 
 const { width } = Dimensions.get('window');
 
@@ -39,89 +39,30 @@ interface TrendingItem {
 export default function TrendingScreen() {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'all'>('week');
-  const items = useItems();
+  const { trendingItems, trendingCategories: dbCategories, loading, error } = useTrendingData();
 
-  const trendingCategories: TrendingCategory[] = [
-    {
-      id: 'dress',
-      name: 'Dresses',
-      icon: 'shirt-outline',
-      trend: '+45%',
-      itemCount: 234,
-      description: 'Evening & cocktail dresses',
-      color: '#E91E63'
-    },
-    {
-      id: 'accessories',
-      name: 'Accessories',
-      icon: 'watch-outline',
-      trend: '+38%',
-      itemCount: 189,
-      description: 'Jewelry, bags & watches',
-      color: '#FF9800'
-    },
-    {
-      id: 'top',
-      name: 'Designer Tops',
-      icon: 'shirt-outline',
-      trend: '+32%',
-      itemCount: 156,
-      description: 'Luxury & designer pieces',
-      color: '#2196F3'
-    },
-    {
-      id: 'outerwear',
-      name: 'Outerwear',
-      icon: 'shirt-outline',
-      trend: '+28%',
-      itemCount: 98,
-      description: 'Jackets & coats',
-      color: '#9C27B0'
-    }
-  ];
+  // Transform database categories into trending format
+  const trendingCategories: TrendingCategory[] = (dbCategories || []).map((cat, index) => ({
+    id: cat.id,
+    name: cat.name,
+    icon: cat.icon || 'shirt-outline',
+    trend: `+${Math.floor(Math.random() * 50) + 20}%`, // Mock trend data
+    itemCount: Math.floor(Math.random() * 200) + 50, // Mock item count
+    description: cat.description || `${cat.name} items`,
+    color: cat.color || ['#E91E63', '#FF9800', '#2196F3', '#9C27B0', '#FF5722'][index % 5]
+  }));
 
-  const trendingItems: TrendingItem[] = [
-    {
-      id: '1',
-      title: 'Elegant Satin Evening Dress',
-      category: 'Dresses',
-      pricePerDay: 85,
-      rating: 4.9,
-      totalBookings: 47,
-      trend: '+128%',
-      trendType: 'rising'
-    },
-    {
-      id: '2',
-      title: 'Vintage Designer Leather Jacket',
-      category: 'Outerwear',
-      pricePerDay: 65,
-      rating: 4.8,
-      totalBookings: 35,
-      trend: '+89%',
-      trendType: 'hot'
-    },
-    {
-      id: '3',
-      title: 'Luxury Diamond Necklace',
-      category: 'Jewelry',
-      pricePerDay: 120,
-      rating: 5.0,
-      totalBookings: 28,
-      trend: '+76%',
-      trendType: 'new'
-    },
-    {
-      id: '4',
-      title: 'Designer Cocktail Dress',
-      category: 'Dresses',
-      pricePerDay: 95,
-      rating: 4.7,
-      totalBookings: 52,
-      trend: '+45%',
-      trendType: 'popular'
-    }
-  ];
+  // Transform database items into trending format
+  const transformedTrendingItems: TrendingItem[] = (trendingItems || []).slice(0, 4).map((item, index) => ({
+    id: item.id,
+    title: item.title,
+    category: item.categories?.name || 'Unknown',
+    pricePerDay: item.price_per_day,
+    rating: 4.5 + Math.random() * 0.5, // Mock rating
+    totalBookings: Math.floor(Math.random() * 50) + 10, // Mock bookings
+    trend: `+${Math.floor(Math.random() * 100) + 30}%`, // Mock trend
+    trendType: (['rising', 'hot', 'new', 'popular'] as const)[index % 4]
+  }));
 
   const getTrendIcon = (trendType: string) => {
     switch (trendType) {
@@ -299,7 +240,7 @@ export default function TrendingScreen() {
                 </TouchableOpacity>
               </View>
               <View style={styles.trendingItemsGrid}>
-                {trendingItems.map((item, index) => (
+                {transformedTrendingItems.map((item, index) => (
                   <View key={item.id} style={styles.trendingItemWrapper}>
                     {renderTrendingItem({ item })}
                   </View>

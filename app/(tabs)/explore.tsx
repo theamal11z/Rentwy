@@ -12,8 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-// import { useQuery } from 'convex/react';
-import { useItems } from '@/lib/mockHooks';
+import { useItems, useCategories } from '@/lib/hooks/useSupabase';
 
 const { width } = Dimensions.get('window');
 
@@ -24,7 +23,13 @@ export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(category || null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
-  const items = useItems(selectedCategory || undefined);
+  const { items, loading: itemsLoading, error: itemsError } = useItems({
+    categoryId: selectedCategory || undefined,
+    searchQuery: searchQuery || undefined,
+    limit: 50
+  });
+  
+  const { categories: dbCategories, loading: categoriesLoading } = useCategories();
 
   // Update selected category when query parameter changes
   React.useEffect(() => {
@@ -33,31 +38,27 @@ export default function ExploreScreen() {
     }
   }, [category]);
 
+  // Combine "All" category with real categories from database
   const categories = [
     { id: 'all', name: 'All', icon: 'apps-outline' },
-    { id: 'dress', name: 'Dresses', icon: 'shirt-outline' },
-    { id: 'top', name: 'Tops', icon: 'shirt-outline' },
-    { id: 'bottom', name: 'Bottoms', icon: 'shirt-outline' },
-    { id: 'outerwear', name: 'Outerwear', icon: 'shirt-outline' },
-    { id: 'shoes', name: 'Shoes', icon: 'footsteps-outline' },
-    { id: 'accessories', name: 'Accessories', icon: 'watch-outline' },
-    { id: 'jewelry', name: 'Jewelry', icon: 'diamond-outline' },
-    { id: 'bags', name: 'Bags', icon: 'bag-outline' },
+    ...(dbCategories?.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon || 'shirt-outline'
+    })) || [])
   ];
 
-  const filteredItems = items.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  // Items are already filtered by the backend hook based on searchQuery
+  const filteredItems = items || [];
 
   const renderGridItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.gridItem} onPress={() => router.push(`/item/${item._id}`)}>
+    <TouchableOpacity style={styles.gridItem} onPress={() => router.push(`/item/${item.id}`)}>
       <View style={styles.itemImageContainer}>
         <View style={styles.placeholderImage}>
           <Ionicons name="image-outline" size={32} color="#CCCCCC" />
         </View>
         <View style={styles.priceTag}>
-          <Text style={styles.priceText}>${item.pricePerDay}/day</Text>
+          <Text style={styles.priceText}>${item.price_per_day}/day</Text>
         </View>
         <TouchableOpacity style={styles.favoriteButton}>
           <Ionicons name="heart-outline" size={16} color="#666666" />
@@ -67,20 +68,20 @@ export default function ExploreScreen() {
         <Text style={styles.itemTitle} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text style={styles.itemSize}>Size {item.size}</Text>
+        <Text style={styles.itemSize}>Size {item.size || 'N/A'}</Text>
         <View style={styles.itemFooter}>
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={12} color="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+            <Text style={styles.ratingText}>4.5</Text>
           </View>
-          <Text style={styles.itemDistance}>2.1 km</Text>
+          <Text style={styles.itemDistance}>{item.location || '2.1 km'}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
   const renderListItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.listItem} onPress={() => router.push(`/item/${item._id}`)}>
+    <TouchableOpacity style={styles.listItem} onPress={() => router.push(`/item/${item.id}`)}>
       <View style={styles.listImageContainer}>
         <View style={styles.listPlaceholderImage}>
           <Ionicons name="image-outline" size={24} color="#CCCCCC" />
@@ -94,10 +95,10 @@ export default function ExploreScreen() {
           {item.description}
         </Text>
         <View style={styles.listItemFooter}>
-          <Text style={styles.listItemPrice}>${item.pricePerDay}/day</Text>
+          <Text style={styles.listItemPrice}>${item.price_per_day}/day</Text>
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={12} color="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+            <Text style={styles.ratingText}>4.5</Text>
           </View>
         </View>
       </View>
@@ -216,7 +217,7 @@ export default function ExploreScreen() {
           <FlatList
             data={filteredItems}
             renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
-            keyExtractor={(item) => item._id}
+            keyExtractor={(item) => item.id}
             numColumns={viewMode === 'grid' ? 2 : 1}
             key={viewMode} // Force re-render when view mode changes
             showsVerticalScrollIndicator={false}
