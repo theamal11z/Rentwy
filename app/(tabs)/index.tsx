@@ -50,7 +50,10 @@ export default function HomeScreen() {
   });
 
   const renderFeaturedItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.featuredCard}>
+    <TouchableOpacity 
+      style={styles.featuredCard}
+      onPress={() => router.push(`/item/${item._id}`)}
+    >
       <View style={styles.featuredImageContainer}>
         <View style={styles.placeholderImage}>
           <Ionicons name="image-outline" size={40} color="#CCCCCC" />
@@ -77,7 +80,10 @@ export default function HomeScreen() {
   );
 
   const renderCategory = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.categoryCard}>
+    <TouchableOpacity 
+      style={styles.categoryCard}
+      onPress={() => router.push(`/(tabs)/explore?category=${item.id}`)}
+    >
       <View style={styles.categoryIcon}>
         <Ionicons name={item.icon as any} size={24} color="#4CAF50" />
       </View>
@@ -94,8 +100,15 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Hello! 👋</Text>
             <Text style={styles.subtitle}>Find your perfect outfit</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity 
+            style={styles.notificationButton}
+            onPress={() => router.push('/notifications')}
+          >
             <Ionicons name="notifications-outline" size={24} color="#333333" />
+            {/* Add notification badge if there are unread notifications */}
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>2</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -154,7 +167,11 @@ export default function HomeScreen() {
             contentContainerStyle={styles.trendingList}
           >
             {trendingItems.map((trend) => (
-              <View key={trend.id} style={styles.trendingCard}>
+              <TouchableOpacity 
+                key={trend.id} 
+                style={styles.trendingCard}
+                onPress={() => router.push('/trending')}
+              >
                 <View style={styles.trendingIcon}>
                   <Ionicons name="trending-up" size={20} color="#4CAF50" />
                 </View>
@@ -164,7 +181,7 @@ export default function HomeScreen() {
                   <Text style={styles.trendingPercent}>{trend.trend}</Text>
                   <Ionicons name="arrow-up" size={12} color="#4CAF50" />
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
@@ -186,7 +203,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured Items</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -217,7 +234,10 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={styles.actionCard}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/(tabs)/add-listing')}
+            >
               <View style={styles.actionIcon}>
                 <Ionicons name="add-circle-outline" size={28} color="#4CAF50" />
               </View>
@@ -225,7 +245,10 @@ export default function HomeScreen() {
               <Text style={styles.actionSubtitle}>Start earning from your wardrobe</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionCard}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/(tabs)/explore')}
+            >
               <View style={styles.actionIcon}>
                 <Ionicons name="location-outline" size={28} color="#4CAF50" />
               </View>
@@ -273,6 +296,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF5722',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   searchBar: {
     flexDirection: 'row',

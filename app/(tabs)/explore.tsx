@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 // import { useQuery } from 'convex/react';
 import { useItems } from '@/lib/mockHooks';
 
@@ -19,11 +19,19 @@ const { width } = Dimensions.get('window');
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { category } = useLocalSearchParams<{ category?: string }>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(category || null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   const items = useItems(selectedCategory || undefined);
+
+  // Update selected category when query parameter changes
+  React.useEffect(() => {
+    if (category && category !== selectedCategory) {
+      setSelectedCategory(category);
+    }
+  }, [category]);
 
   const categories = [
     { id: 'all', name: 'All', icon: 'apps-outline' },
