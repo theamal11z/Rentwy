@@ -230,7 +230,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Trending Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.sectionWithPadding]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Trending Now</Text>
             <View style={styles.trendingBadge}>
@@ -289,7 +289,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Featured Items */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.sectionWithPadding]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured Items</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
@@ -326,7 +326,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.sectionWithPadding]}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActions}>
             <TouchableOpacity 
@@ -427,6 +427,9 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 32,
     paddingHorizontal: 20,
+  },
+  sectionWithPadding: {
+    paddingVertical: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
