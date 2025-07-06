@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useItems, useCategories } from '@/lib/hooks/useSupabase';
+import { useItems, useCategories } from '@/lib/hooks/useMockData';
 
 const { width } = Dimensions.get('window');
 

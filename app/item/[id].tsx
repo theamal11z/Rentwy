@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useItem } from '@/lib/mockHooks';
+import { useItem } from '@/lib/hooks/useMockData';
 import { theme, getColor, getShadow } from '@/lib/theme';
 
 const { width, height } = Dimensions.get('window');
